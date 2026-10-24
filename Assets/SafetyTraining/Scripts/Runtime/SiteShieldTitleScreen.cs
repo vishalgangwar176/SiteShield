@@ -16,11 +16,22 @@ namespace SafetyTraining.Runtime
         public static SiteShieldTitleScreen Instance { get; private set; }
 
         [Header("Canvases & Groups")]
+        [SerializeField] Canvas rootCanvas;
         [SerializeField] CanvasGroup mainCanvasGroup;
+        [SerializeField] GameObject screenBackdrop;
         [SerializeField] GameObject titleScreenView;
         [SerializeField] GameObject moduleSelectView;
         [SerializeField] GameObject settingsView;
         [SerializeField] GameObject pauseBanner;
+
+        [Header("Primary Buttons")]
+        [SerializeField] Button btnEnterCampus;
+        [SerializeField] Button btnModuleAccess;
+        [SerializeField] Button btnSettings;
+        [SerializeField] Button btnExit;
+        [SerializeField] Button btnModuleBack;
+        [SerializeField] Button btnSettingsBack;
+        [SerializeField] Button[] moduleButtons;
 
         [Header("Settings Controls")]
         [SerializeField] Slider volumeSlider;
@@ -46,10 +57,13 @@ namespace SafetyTraining.Runtime
             }
             Instance = this;
 
+            if (rootCanvas == null)
+                rootCanvas = GetComponent<Canvas>();
+
             if (mainCanvasGroup == null)
                 mainCanvasGroup = GetComponent<CanvasGroup>();
 
-            // Load saved preferences if available
+            BindControls();
             LoadSettings();
         }
 
@@ -61,6 +75,7 @@ namespace SafetyTraining.Runtime
 
         void OnDestroy()
         {
+            UnbindControls();
             if (Instance == this)
                 Instance = null;
         }
@@ -77,6 +92,11 @@ namespace SafetyTraining.Runtime
 
                 mainCanvasGroup.blocksRaycasts = mainCanvasGroup.alpha > 0.05f;
                 mainCanvasGroup.interactable = mainCanvasGroup.alpha > 0.8f;
+
+                if (targetAlpha == 0f && mainCanvasGroup.alpha <= 0.01f)
+                {
+                    ApplyClosedVisuals();
+                }
             }
 
             // Keyboard shortcuts: Esc or M toggles menu during gameplay
@@ -91,20 +111,112 @@ namespace SafetyTraining.Runtime
             }
         }
 
+        public void BindControls()
+        {
+            if (btnEnterCampus != null)
+            {
+                btnEnterCampus.onClick.RemoveListener(StartCampusTraining);
+                btnEnterCampus.onClick.AddListener(StartCampusTraining);
+            }
+            if (btnModuleAccess != null)
+            {
+                btnModuleAccess.onClick.RemoveListener(ShowModuleSelect);
+                btnModuleAccess.onClick.AddListener(ShowModuleSelect);
+            }
+            if (btnSettings != null)
+            {
+                btnSettings.onClick.RemoveListener(ShowSettings);
+                btnSettings.onClick.AddListener(ShowSettings);
+            }
+            if (btnExit != null)
+            {
+                btnExit.onClick.RemoveListener(ExitSimulator);
+                btnExit.onClick.AddListener(ExitSimulator);
+            }
+            if (btnModuleBack != null)
+            {
+                btnModuleBack.onClick.RemoveListener(ShowTitleMenu);
+                btnModuleBack.onClick.AddListener(ShowTitleMenu);
+            }
+            if (btnSettingsBack != null)
+            {
+                btnSettingsBack.onClick.RemoveListener(ShowTitleMenu);
+                btnSettingsBack.onClick.AddListener(ShowTitleMenu);
+            }
+
+            if (volumeSlider != null)
+            {
+                volumeSlider.onValueChanged.RemoveListener(OnVolumeChanged);
+                volumeSlider.onValueChanged.AddListener(OnVolumeChanged);
+            }
+            if (muteToggle != null)
+            {
+                muteToggle.onValueChanged.RemoveListener(OnMuteToggled);
+                muteToggle.onValueChanged.AddListener(OnMuteToggled);
+            }
+            if (reducedMotionToggle != null)
+            {
+                reducedMotionToggle.onValueChanged.RemoveListener(OnReducedMotionToggled);
+                reducedMotionToggle.onValueChanged.AddListener(OnReducedMotionToggled);
+            }
+            if (lookSensitivitySlider != null)
+            {
+                lookSensitivitySlider.onValueChanged.RemoveListener(OnLookSensitivityChanged);
+                lookSensitivitySlider.onValueChanged.AddListener(OnLookSensitivityChanged);
+            }
+
+            if (moduleButtons != null)
+            {
+                for (int i = 0; i < moduleButtons.Length; i++)
+                {
+                    var btn = moduleButtons[i];
+                    if (btn != null)
+                    {
+                        var siteIndex = i;
+                        btn.onClick.RemoveAllListeners();
+                        btn.onClick.AddListener(() => LaunchModule(siteIndex));
+                    }
+                }
+            }
+        }
+
+        public void UnbindControls()
+        {
+            if (btnEnterCampus != null) btnEnterCampus.onClick.RemoveListener(StartCampusTraining);
+            if (btnModuleAccess != null) btnModuleAccess.onClick.RemoveListener(ShowModuleSelect);
+            if (btnSettings != null) btnSettings.onClick.RemoveListener(ShowSettings);
+            if (btnExit != null) btnExit.onClick.RemoveListener(ExitSimulator);
+            if (btnModuleBack != null) btnModuleBack.onClick.RemoveListener(ShowTitleMenu);
+            if (btnSettingsBack != null) btnSettingsBack.onClick.RemoveListener(ShowTitleMenu);
+        }
+
         public void ShowTitleMenu()
         {
             isOpen = true;
             targetAlpha = 1f;
+
+            if (rootCanvas != null) rootCanvas.enabled = true;
+            if (screenBackdrop != null) screenBackdrop.SetActive(true);
             if (titleScreenView != null) titleScreenView.SetActive(true);
             if (moduleSelectView != null) moduleSelectView.SetActive(false);
             if (settingsView != null) settingsView.SetActive(false);
             if (pauseBanner != null) pauseBanner.SetActive(isPausedMode);
+
+            if (mainCanvasGroup != null)
+            {
+                if (ReducedMotion)
+                    mainCanvasGroup.alpha = 1f;
+                mainCanvasGroup.blocksRaycasts = true;
+                mainCanvasGroup.interactable = true;
+            }
 
             SafetyAudioManager.Instance?.PlayHover();
         }
 
         public void ShowModuleSelect()
         {
+            if (rootCanvas != null) rootCanvas.enabled = true;
+            if (screenBackdrop != null) screenBackdrop.SetActive(true);
             if (titleScreenView != null) titleScreenView.SetActive(false);
             if (moduleSelectView != null) moduleSelectView.SetActive(true);
             if (settingsView != null) settingsView.SetActive(false);
@@ -114,6 +226,8 @@ namespace SafetyTraining.Runtime
 
         public void ShowSettings()
         {
+            if (rootCanvas != null) rootCanvas.enabled = true;
+            if (screenBackdrop != null) screenBackdrop.SetActive(true);
             if (titleScreenView != null) titleScreenView.SetActive(false);
             if (moduleSelectView != null) moduleSelectView.SetActive(false);
             if (settingsView != null) settingsView.SetActive(true);
@@ -151,6 +265,32 @@ namespace SafetyTraining.Runtime
             targetAlpha = 0f;
             isPausedMode = true; // next time opened, it acts as pause menu
             SafetyAudioManager.Instance?.PlayClick();
+
+            if (mainCanvasGroup != null)
+            {
+                mainCanvasGroup.blocksRaycasts = false;
+                mainCanvasGroup.interactable = false;
+            }
+
+            if (ReducedMotion)
+            {
+                ApplyClosedVisuals();
+            }
+        }
+
+        public void ApplyClosedVisuals()
+        {
+            if (mainCanvasGroup != null)
+            {
+                mainCanvasGroup.alpha = 0f;
+                mainCanvasGroup.blocksRaycasts = false;
+                mainCanvasGroup.interactable = false;
+            }
+            if (titleScreenView != null) titleScreenView.SetActive(false);
+            if (moduleSelectView != null) moduleSelectView.SetActive(false);
+            if (settingsView != null) settingsView.SetActive(false);
+            if (screenBackdrop != null) screenBackdrop.SetActive(false);
+            if (rootCanvas != null) rootCanvas.enabled = false;
         }
 
         public void TogglePauseMenu()

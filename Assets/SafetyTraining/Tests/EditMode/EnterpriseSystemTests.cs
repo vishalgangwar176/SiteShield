@@ -15,6 +15,8 @@ namespace SafetyTraining.Tests.EditMode
         public void OpenTrainingScene()
         {
             EditorSceneManager.OpenScene(ScenePath);
+            var titleScreen = Object.FindFirstObjectByType<SiteShieldTitleScreen>();
+            titleScreen?.BindControls();
         }
 
         [Test]
@@ -63,6 +65,33 @@ namespace SafetyTraining.Tests.EditMode
             var audioMgr = Object.FindFirstObjectByType<SafetyAudioManager>();
             Assert.That(audioMgr, Is.Not.Null, "SafetyAudioManager must be configured in the scene.");
             Assert.That(audioMgr.GetComponent<AudioSource>(), Is.Not.Null, "AudioSource must be present.");
+        }
+
+        [Test]
+        public void TitleScreen_EnterCampusButton_IsBoundAndDismissesPanel()
+        {
+            var titleScreen = Object.FindFirstObjectByType<SiteShieldTitleScreen>();
+            Assert.That(titleScreen, Is.Not.Null, "TitleScreen must be present.");
+
+            titleScreen.ShowTitleMenu();
+            Assert.That(titleScreen.IsOpen, Is.True, "Title menu should be open.");
+
+            var enterBtnGo = GameObject.Find("Btn Enter Campus");
+            Assert.That(enterBtnGo, Is.Not.Null, "Btn Enter Campus GameObject must exist.");
+            var enterBtn = enterBtnGo.GetComponent<Button>();
+            Assert.That(enterBtn, Is.Not.Null, "Btn Enter Campus must have Button component.");
+
+            Assert.That(enterBtn.onClick.GetPersistentEventCount(), Is.GreaterThan(0),
+                "Btn Enter Campus must have a persistent onClick listener in the scene!");
+
+            // Test clicking the button
+            enterBtn.onClick.Invoke();
+
+            Assert.That(titleScreen.IsOpen, Is.False, "Menu must close after clicking Enter Training Campus.");
+
+            var canvasGroup = titleScreen.GetComponent<CanvasGroup>();
+            Assert.That(canvasGroup, Is.Not.Null);
+            Assert.That(canvasGroup.blocksRaycasts, Is.False, "BlocksRaycasts must be disabled when menu closes.");
         }
     }
 }

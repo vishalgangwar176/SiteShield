@@ -1,5 +1,6 @@
 using SafetyTraining.Runtime;
 using UnityEditor;
+using UnityEditor.Events;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.XR.Interaction.Toolkit.UI;
@@ -40,8 +41,11 @@ namespace SafetyTraining.Editor
 
             // Fullscreen Backdrop (Warm Off-White with deep overlay)
             var backdrop = CreateImage("Screen Backdrop", root.transform, null, uiMaterial,
-                new Color(0.06f, 0.11f, 0.16f, 0.88f), Vector2.zero, new Vector2(1200f, 700f),
-                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f));
+                new Color(0.06f, 0.11f, 0.16f, 0.88f), Vector2.zero, Vector2.zero,
+                Vector2.zero, Vector2.one);
+            var backdropRect = backdrop.rectTransform;
+            backdropRect.offsetMin = Vector2.zero;
+            backdropRect.offsetMax = Vector2.zero;
 
             // ==========================================
             // 1. TITLE SCREEN VIEW
@@ -104,24 +108,28 @@ namespace SafetyTraining.Editor
                 SiteShieldTheme.BrightTeal, Vector2.zero, new Vector2(400f, 40f), TextAnchor.MiddleCenter);
             txtEnter.fontStyle = FontStyle.Bold;
             btnEnter.onClick.AddListener(titleManager.StartCampusTraining);
+            AddPersistent(btnEnter, titleManager.StartCampusTraining);
 
             var btnModules = CreateButton("Btn Modules", heroCard.transform, buttonSprite,
                 SiteShieldTheme.SecondaryNavy, SiteShieldTheme.SlateBlue, new Vector2(0f, -50f), new Vector2(440f, 50f));
             var txtModules = CreateText("Text", btnModules.transform, "QUICK MODULE ACCESS", displayFont, 18,
                 SiteShieldTheme.TextPrimary, Vector2.zero, new Vector2(400f, 40f), TextAnchor.MiddleCenter);
             btnModules.onClick.AddListener(titleManager.ShowModuleSelect);
+            AddPersistent(btnModules, titleManager.ShowModuleSelect);
 
             var btnSettings = CreateButton("Btn Settings", heroCard.transform, buttonSprite,
                 SiteShieldTheme.SecondaryNavy, SiteShieldTheme.SlateBlue, new Vector2(0f, -112f), new Vector2(440f, 50f));
             var txtSettings = CreateText("Text", btnSettings.transform, "SETTINGS & ACCESSIBILITY", displayFont, 18,
                 SiteShieldTheme.TextPrimary, Vector2.zero, new Vector2(400f, 40f), TextAnchor.MiddleCenter);
             btnSettings.onClick.AddListener(titleManager.ShowSettings);
+            AddPersistent(btnSettings, titleManager.ShowSettings);
 
             var btnExit = CreateButton("Btn Exit", heroCard.transform, buttonSprite,
                 new Color(0.20f, 0.12f, 0.14f), SiteShieldTheme.CriticalRed, new Vector2(0f, -174f), new Vector2(440f, 46f));
             var txtExit = CreateText("Text", btnExit.transform, "EXIT SIMULATOR", displayFont, 16,
                 new Color(0.95f, 0.65f, 0.65f), Vector2.zero, new Vector2(400f, 40f), TextAnchor.MiddleCenter);
             btnExit.onClick.AddListener(titleManager.ExitSimulator);
+            AddPersistent(btnExit, titleManager.ExitSimulator);
 
             // Footer metadata
             CreateText("Footer Info", heroCard.transform,
@@ -156,23 +164,23 @@ namespace SafetyTraining.Editor
                 TextAnchor.MiddleCenter);
 
             // 5 Module Cards
-            CreateModuleLauncherCard(moduleCard.transform, buttonSprite, displayFont, bodyFont,
+            var mod1 = CreateModuleLauncherCard(moduleCard.transform, buttonSprite, displayFont, bodyFont,
                 "01", "CONSTRUCTION SITE", "Fall Edge Protection & 5 Hands-on Controls",
                 SiteShieldTheme.AmberWarning, new Vector2(-280f, 80f), () => titleManager.LaunchModule(0));
 
-            CreateModuleLauncherCard(moduleCard.transform, buttonSprite, displayFont, bodyFont,
+            var mod2 = CreateModuleLauncherCard(moduleCard.transform, buttonSprite, displayFont, bodyFont,
                 "02", "WAREHOUSE OPERATIONS", "Spill Isolation & Pedestrian Separation",
                 SiteShieldTheme.ActionBlue, new Vector2(280f, 80f), () => titleManager.LaunchModule(1));
 
-            CreateModuleLauncherCard(moduleCard.transform, buttonSprite, displayFont, bodyFont,
+            var mod3 = CreateModuleLauncherCard(moduleCard.transform, buttonSprite, displayFont, bodyFont,
                 "03", "FIRE RESPONSE", "Extinguisher Clearance & Egress Routes",
                 SiteShieldTheme.CriticalRed, new Vector2(-280f, -40f), () => titleManager.LaunchModule(2));
 
-            CreateModuleLauncherCard(moduleCard.transform, buttonSprite, displayFont, bodyFont,
+            var mod4 = CreateModuleLauncherCard(moduleCard.transform, buttonSprite, displayFont, bodyFont,
                 "04", "CHEMICAL PROCESSING", "GHS Drum Labeling, Segregation & Eyewash",
                 SiteShieldTheme.SuccessGreen, new Vector2(280f, -40f), () => titleManager.LaunchModule(3));
 
-            CreateModuleLauncherCard(moduleCard.transform, buttonSprite, displayFont, bodyFont,
+            var mod5 = CreateModuleLauncherCard(moduleCard.transform, buttonSprite, displayFont, bodyFont,
                 "05", "ELECTRICAL MAINTENANCE", "Lockout/Tagout (LOTO) & Cable Bridges",
                 new Color(0.65f, 0.50f, 1.0f), new Vector2(0f, -155f), () => titleManager.LaunchModule(4));
 
@@ -182,6 +190,7 @@ namespace SafetyTraining.Editor
             CreateText("Text", btnModuleBack.transform, "← BACK TO MENU", displayFont, 16,
                 SiteShieldTheme.BrightTeal, Vector2.zero, new Vector2(240f, 36f), TextAnchor.MiddleCenter);
             btnModuleBack.onClick.AddListener(titleManager.ShowTitleMenu);
+            AddPersistent(btnModuleBack, titleManager.ShowTitleMenu);
 
             // ==========================================
             // 3. SETTINGS & ACCESSIBILITY VIEW
@@ -215,6 +224,7 @@ namespace SafetyTraining.Editor
             var volSlider = CreateSlider("Volume Slider", settingsCard.transform, buttonSprite,
                 new Vector2(150f, 90f), new Vector2(260f, 26f), 0.85f);
             volSlider.onValueChanged.AddListener(titleManager.OnVolumeChanged);
+            AddPersistent(volSlider.onValueChanged, titleManager.OnVolumeChanged);
 
             // Mute Toggle
             CreateText("Mute Label", settingsCard.transform, "MUTE ALL AUDIO", displayFont, 16,
@@ -222,6 +232,7 @@ namespace SafetyTraining.Editor
             var muteToggle = CreateToggle("Mute Toggle", settingsCard.transform, buttonSprite,
                 new Vector2(150f, 30f), false);
             muteToggle.onValueChanged.AddListener(titleManager.OnMuteToggled);
+            AddPersistent(muteToggle.onValueChanged, titleManager.OnMuteToggled);
 
             // Reduced Motion Toggle (Accessibility)
             CreateText("RedMo Label", settingsCard.transform, "REDUCED MOTION (VR COMFORT)", displayFont, 16,
@@ -229,6 +240,7 @@ namespace SafetyTraining.Editor
             var redMoToggle = CreateToggle("Reduced Motion Toggle", settingsCard.transform, buttonSprite,
                 new Vector2(150f, -30f), false);
             redMoToggle.onValueChanged.AddListener(titleManager.OnReducedMotionToggled);
+            AddPersistent(redMoToggle.onValueChanged, titleManager.OnReducedMotionToggled);
 
             // Look Sensitivity Slider
             CreateText("Sens Label", settingsCard.transform, "DESKTOP LOOK SENSITIVITY", displayFont, 16,
@@ -238,6 +250,7 @@ namespace SafetyTraining.Editor
             sensSlider.minValue = 0.2f;
             sensSlider.maxValue = 3.0f;
             sensSlider.onValueChanged.AddListener(titleManager.OnLookSensitivityChanged);
+            AddPersistent(sensSlider.onValueChanged, titleManager.OnLookSensitivityChanged);
 
             // Back button
             var btnSettingsBack = CreateButton("Btn Settings Back", settingsCard.transform, buttonSprite,
@@ -245,21 +258,32 @@ namespace SafetyTraining.Editor
             CreateText("Text", btnSettingsBack.transform, "← BACK TO MENU", displayFont, 16,
                 SiteShieldTheme.BrightTeal, Vector2.zero, new Vector2(240f, 36f), TextAnchor.MiddleCenter);
             btnSettingsBack.onClick.AddListener(titleManager.ShowTitleMenu);
+            AddPersistent(btnSettingsBack, titleManager.ShowTitleMenu);
 
             // Link serialized fields to manager
-            var fields = typeof(SiteShieldTitleScreen).GetFields(
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            SetField(titleManager, "rootCanvas", canvas);
             SetField(titleManager, "mainCanvasGroup", canvasGroup);
+            SetField(titleManager, "screenBackdrop", backdrop.gameObject);
             SetField(titleManager, "titleScreenView", titleView);
             SetField(titleManager, "moduleSelectView", moduleView);
             SetField(titleManager, "settingsView", settingsView);
+            SetField(titleManager, "btnEnterCampus", btnEnter);
+            SetField(titleManager, "btnModuleAccess", btnModules);
+            SetField(titleManager, "btnSettings", btnSettings);
+            SetField(titleManager, "btnExit", btnExit);
+            SetField(titleManager, "btnModuleBack", btnModuleBack);
+            SetField(titleManager, "btnSettingsBack", btnSettingsBack);
+            SetField(titleManager, "moduleButtons", new[] { mod1, mod2, mod3, mod4, mod5 });
             SetField(titleManager, "volumeSlider", volSlider);
             SetField(titleManager, "muteToggle", muteToggle);
             SetField(titleManager, "reducedMotionToggle", redMoToggle);
             SetField(titleManager, "lookSensitivitySlider", sensSlider);
+
+            EditorUtility.SetDirty(titleManager);
+            EditorUtility.SetDirty(root);
         }
 
-        static void CreateModuleLauncherCard(Transform parent, Sprite sprite, Font displayFont, Font bodyFont,
+        static Button CreateModuleLauncherCard(Transform parent, Sprite sprite, Font displayFont, Font bodyFont,
             string number, string title, string subtitle, Color accent, Vector2 pos, UnityEngine.Events.UnityAction action)
         {
             var btn = CreateButton($"Module Card {number}", parent, sprite,
@@ -279,6 +303,8 @@ namespace SafetyTraining.Editor
             // Subtitle
             CreateText("Sub", btn.transform, subtitle, bodyFont, 13, SiteShieldTheme.TextSecondary,
                 new Vector2(25f, -15f), new Vector2(380f, 24f), TextAnchor.MiddleLeft);
+
+            return btn;
         }
 
         static Image CreateImage(string name, Transform parent, Sprite sprite, Material material,
@@ -421,6 +447,22 @@ namespace SafetyTraining.Editor
             var field = target.GetType().GetField(name,
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             field?.SetValue(target, value);
+        }
+
+        static void AddPersistent(Button button, UnityEngine.Events.UnityAction action)
+        {
+            UnityEventTools.AddPersistentListener(button.onClick, action);
+            button.onClick.SetPersistentListenerState(
+                button.onClick.GetPersistentEventCount() - 1,
+                UnityEngine.Events.UnityEventCallState.EditorAndRuntime);
+        }
+
+        static void AddPersistent<T>(UnityEngine.Events.UnityEvent<T> unityEvent, UnityEngine.Events.UnityAction<T> action)
+        {
+            UnityEventTools.AddPersistentListener(unityEvent, action);
+            unityEvent.SetPersistentListenerState(
+                unityEvent.GetPersistentEventCount() - 1,
+                UnityEngine.Events.UnityEventCallState.EditorAndRuntime);
         }
     }
 }
