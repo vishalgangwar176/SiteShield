@@ -7,6 +7,7 @@
 [Ll]ogs/
 [Tt]est[Rr]esults/
 [Tt]est[Rr]esults*.xml
+test-results*.xml
 [Cc]aptures/
 [Vv]ideos/
 [Uu]ser[Ss]ettings/
