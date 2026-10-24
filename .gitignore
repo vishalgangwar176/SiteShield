@@ -25,3 +25,5 @@ test-results*.xml
 *.pdb
 *.mdb
 sysinfo.txt
+*.bundle
+
