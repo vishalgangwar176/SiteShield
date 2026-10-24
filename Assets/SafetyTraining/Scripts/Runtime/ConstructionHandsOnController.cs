@@ -60,6 +60,8 @@ namespace SafetyTraining.Runtime
                 SafetyTraining.Core.TrainingSiteId.Construction, action.StepIndex, action.ActionName,
                 releaseDistance, true, inputMode);
             TrainingCoordinator.Instance?.AddHandsOnBonus(20);
+            SafetyTaskManager.Instance?.NotifyPracticalStepCompleted(
+                SafetyTraining.Core.TrainingSiteId.Construction, action.StepIndex);
             var coach = FindObjectsByType<NpcSiteCompanion>(FindObjectsSortMode.None)
                 .FirstOrDefault(item => item.SiteId == SafetyTraining.Core.TrainingSiteId.Construction);
             coach?.Encourage(nextStep >= actions.Count);

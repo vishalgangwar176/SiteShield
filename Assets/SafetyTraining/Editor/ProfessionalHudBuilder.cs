@@ -71,6 +71,10 @@ namespace SafetyTraining.Editor
             var state = Text("State Label", feedbackShell.transform, "Mission Brief", bodyFont, 13, Accent,
                 new Vector2(58f, -20f), new Vector2(260f, 18f), TextAnchor.UpperLeft);
             state.fontStyle = FontStyle.Bold;
+            var taskObjective = Text("Task Objective", feedbackShell.transform,
+                "OBJECTIVE: FIELD BRIEFING", font, 13, new Color(1.0f, 0.761f, 0.102f),
+                new Vector2(320f, -20f), new Vector2(470f, 18f), TextAnchor.UpperLeft);
+            taskObjective.fontStyle = FontStyle.Bold;
             var feedback = Text("Feedback", feedbackShell.transform,
                 "Inspect each site. Select only conditions you believe are hazardous.", bodyFont, 21, Primary,
                 new Vector2(24f, -44f), new Vector2(772f, 44f), TextAnchor.UpperLeft);
@@ -122,7 +126,8 @@ namespace SafetyTraining.Editor
                 ProgressFill = progress.rectTransform,
                 StateIcon = icon,
                 ScoreDeltaDisplay = scoreDelta,
-                FeedbackShell = feedbackShell.GetComponent<RectTransform>()
+                FeedbackShell = feedbackShell.GetComponent<RectTransform>(),
+                TaskObjectiveDisplay = taskObjective
             });
         }
 

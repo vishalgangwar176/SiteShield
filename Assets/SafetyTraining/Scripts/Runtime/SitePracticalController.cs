@@ -72,6 +72,7 @@ namespace SafetyTraining.Runtime
             nextStep++;
             RefreshCurrentStep();
             TrainingCoordinator.Instance?.AddHandsOnBonus(25);
+            SafetyTaskManager.Instance?.NotifyPracticalStepCompleted(siteId, action.StepIndex);
             FindObjectsByType<NpcSiteCompanion>(FindObjectsSortMode.None)
                 .FirstOrDefault(item => item.SiteId == siteId)?.Encourage(IsComplete);
             if (IsComplete)

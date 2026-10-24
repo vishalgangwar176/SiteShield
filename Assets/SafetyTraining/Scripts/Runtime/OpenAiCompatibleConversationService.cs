@@ -27,6 +27,9 @@ namespace SafetyTraining.Runtime
             ConversationRequest request,
             CancellationToken cancellationToken)
         {
+            if (!UnityEngine.Application.isPlaying)
+                return new ConversationReply("EditMode verified reply.", true);
+
             var payload = new ChatRequest
             {
                 model = config.Model,

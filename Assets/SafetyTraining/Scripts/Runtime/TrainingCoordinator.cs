@@ -219,6 +219,43 @@ namespace SafetyTraining.Runtime
             TrainingHud.Instance?.SetVisible(false);
         }
 
+        public void ReturnToCampus()
+        {
+            if (ActiveSite.HasValue)
+            {
+                LeaveSite(ActiveSite.Value);
+            }
+            else
+            {
+                ActiveSite = null;
+                ActiveSiteName = "TRAINING CAMPUS";
+                HudFeedback = "Select a field module to begin hands-on training.";
+                LastFeedback = HudFeedback;
+            }
+
+            SiteIsolationController.Instance?.ShowHub();
+            NpcChatPanel.Instance?.Close();
+
+            var viewer = Camera.main;
+            if (viewer != null)
+            {
+                var rig = viewer.transform.root;
+                var arrivalPoint = new Vector3(0f, 0.02f, -9.2f);
+                var horizontalDelta = arrivalPoint - viewer.transform.position;
+                horizontalDelta.y = 0f;
+                var destination = rig.position + horizontalDelta;
+                var characterController = rig.GetComponent<CharacterController>();
+                var controllerWasEnabled = characterController != null && characterController.enabled;
+                if (controllerWasEnabled)
+                    characterController.enabled = false;
+                rig.position = destination;
+                Physics.SyncTransforms();
+                if (controllerWasEnabled)
+                    characterController.enabled = true;
+                rig.GetComponent<StartupGroundingGuard>()?.SetSafeSpawn(rig.position);
+            }
+        }
+
         void BuildSessions()
         {
             var targets = FindObjectsByType<InspectionTarget>(FindObjectsSortMode.None);

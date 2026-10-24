@@ -112,6 +112,7 @@ namespace SafetyTraining.Editor
         public static void DressSite(Transform site, SiteStyle style)
         {
             DressPrimitiveSurfaces(site, style);
+            CreateStructuralFraming(site);
             Place(site, new Placement("caged_hanging_light_1k.fbx", "Industrial Work Light",
                 new Vector3(0f, 3.25f, 3.45f), 0.75f, Vector3.zero));
 
@@ -248,6 +249,50 @@ namespace SafetyTraining.Editor
         {
             Place(site, new Placement("rollershutter_door_1k.fbx", "Industrial Roller Door",
                 localPosition, 3.8f, new Vector3(0f, 180f, 0f)));
+        }
+
+        static void CreateStructuralFraming(Transform site)
+        {
+            var framing = new GameObject("Structural Steel Framing").transform;
+            framing.SetParent(site, false);
+
+            var cornerPositions = new[]
+            {
+                new Vector3(-4.75f, 2.1f, -4.15f),
+                new Vector3(4.75f, 2.1f, -4.15f),
+                new Vector3(-4.75f, 2.1f, 4.15f),
+                new Vector3(4.75f, 2.1f, 4.15f)
+            };
+
+            foreach (var pos in cornerPositions)
+            {
+                var col = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                col.name = "Steel H-Column";
+                col.transform.SetParent(framing, false);
+                col.transform.localPosition = pos;
+                col.transform.localScale = new Vector3(0.28f, 4.2f, 0.28f);
+                col.GetComponent<Renderer>().sharedMaterial = RealEnvironmentMaterials.MetalSheet;
+                Object.DestroyImmediate(col.GetComponent<Collider>());
+
+                var boot = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                boot.name = "Impact Protection Base";
+                boot.transform.SetParent(framing, false);
+                boot.transform.localPosition = new Vector3(pos.x, 0.45f, pos.z);
+                boot.transform.localScale = new Vector3(0.44f, 0.9f, 0.44f);
+                boot.GetComponent<Renderer>().sharedMaterial = SafetyScenePrimitives.Material(new Color(0.95f, 0.68f, 0.08f));
+                Object.DestroyImmediate(boot.GetComponent<Collider>());
+            }
+
+            foreach (var z in new[] { -2.2f, 0.8f, 3.8f })
+            {
+                var beam = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                beam.name = "Ceiling Structural I-Beam";
+                beam.transform.SetParent(framing, false);
+                beam.transform.localPosition = new Vector3(0f, 4.15f, z);
+                beam.transform.localScale = new Vector3(9.7f, 0.25f, 0.18f);
+                beam.GetComponent<Renderer>().sharedMaterial = RealEnvironmentMaterials.MetalSheet;
+                Object.DestroyImmediate(beam.GetComponent<Collider>());
+            }
         }
 
         static void DressPrimitiveSurfaces(Transform site, SiteStyle style)

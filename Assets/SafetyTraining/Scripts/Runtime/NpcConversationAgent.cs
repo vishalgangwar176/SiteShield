@@ -62,20 +62,47 @@ namespace SafetyTraining.Runtime
                 transcript = string.Join("\n", transcript)
             };
 
-            try
+            var aiConfig = SafetyAiConfig.Load();
+            if (Application.isPlaying && aiConfig != null && aiConfig.Enabled &&
+                (!string.IsNullOrWhiteSpace(aiConfig.ApiKey) || aiConfig.Provider == AiProviderType.OllamaLocal))
             {
-                var service = useLanguageModel && endpointConfig != null
-                    ? new OpenAiCompatibleConversationService(endpointConfig)
-                    : fallback;
-                LastReply = (await service.ReplyAsync(request, lifetime.Token)).Text;
+                try
+                {
+                    var systemPrompt = SafetyAiContextBuilder.BuildSystemInstructions(siteId);
+                    var dynamicContext = SafetyAiContextBuilder.BuildDynamicContext(siteId, learnerMessage);
+                    LastReply = await SafetyAiClient.SendPromptAsync(
+                        aiConfig,
+                        systemPrompt,
+                        dynamicContext,
+                        null,
+                        lifetime.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+                catch (Exception)
+                {
+                    LastReply = (await fallback.ReplyAsync(request, lifetime.Token)).Text;
+                }
             }
-            catch (OperationCanceledException)
+            else
             {
-                return;
-            }
-            catch (Exception) when (lifetime != null && !lifetime.IsCancellationRequested)
-            {
-                LastReply = (await fallback.ReplyAsync(request, lifetime.Token)).Text;
+                try
+                {
+                    var service = useLanguageModel && endpointConfig != null
+                        ? new OpenAiCompatibleConversationService(endpointConfig)
+                        : fallback;
+                    LastReply = (await service.ReplyAsync(request, lifetime.Token)).Text;
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+                catch (Exception) when (lifetime != null && !lifetime.IsCancellationRequested)
+                {
+                    LastReply = (await fallback.ReplyAsync(request, lifetime.Token)).Text;
+                }
             }
 
             transcript.Add($"Learner: {learnerMessage}");

@@ -48,6 +48,7 @@ namespace SafetyTraining.Editor
             var lobby = CreateTrainingHubLobby();
             var coordinator = new GameObject("Training Coordinator");
             coordinator.AddComponent<TrainingCoordinator>();
+            coordinator.AddComponent<SafetyTaskManager>();
             coordinator.AddComponent<AudioSource>();
             coordinator.AddComponent<SafetyAudioManager>();
             coordinator.AddComponent<SiteExperienceDirector>();

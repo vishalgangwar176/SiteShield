@@ -19,6 +19,7 @@ namespace SafetyTraining.Runtime
             public Image StateIcon;
             public Text ScoreDeltaDisplay;
             public RectTransform FeedbackShell;
+            public Text TaskObjectiveDisplay;
         }
 
         [SerializeField] CanvasGroup canvasGroup;
@@ -31,6 +32,7 @@ namespace SafetyTraining.Runtime
         [SerializeField] Image stateIcon;
         [SerializeField] Text scoreDeltaDisplay;
         [SerializeField] RectTransform feedbackShell;
+        [SerializeField] Text taskObjectiveDisplay;
 
         string shownFeedback;
         int lastScore = -1;
@@ -127,6 +129,26 @@ namespace SafetyTraining.Runtime
                 progressFill.localScale = new Vector3(Mathf.Max(0.02f, coordinator.GuidedProgress01), 1f, 1f);
             }
             ApplyState(coordinator.HudFeedback, coordinator.CertificationComplete);
+
+            if (taskObjectiveDisplay != null)
+            {
+                if (coordinator.ActiveSite.HasValue && SafetyTaskManager.Instance != null)
+                {
+                    var site = coordinator.ActiveSite.Value;
+                    var currentTask = SafetyTaskManager.Instance.GetCurrentTask(site);
+                    var comp = SafetyTaskManager.Instance.GetCompletedCount(site);
+                    var total = SafetyTaskManager.Instance.GetTotalCount(site);
+                    if (currentTask != null)
+                        taskObjectiveDisplay.text = $"OBJECTIVE [{comp + 1}/{total}]: {currentTask.Title.ToUpperInvariant()}";
+                    else
+                        taskObjectiveDisplay.text = $"OBJECTIVES [{total}/{total}]: ALL SITE TASKS COMPLETED";
+                    taskObjectiveDisplay.gameObject.SetActive(!isCollapsed);
+                }
+                else
+                {
+                    taskObjectiveDisplay.gameObject.SetActive(false);
+                }
+            }
         }
 
         public void ToggleCollapse()
@@ -134,6 +156,8 @@ namespace SafetyTraining.Runtime
             isCollapsed = !isCollapsed;
             if (feedbackDisplay != null)
                 feedbackDisplay.gameObject.SetActive(!isCollapsed);
+            if (taskObjectiveDisplay != null)
+                taskObjectiveDisplay.gameObject.SetActive(!isCollapsed);
             SafetyAudioManager.Instance?.PlayClick();
         }
 
@@ -149,6 +173,7 @@ namespace SafetyTraining.Runtime
             stateIcon = bindings.StateIcon;
             scoreDeltaDisplay = bindings.ScoreDeltaDisplay;
             feedbackShell = bindings.FeedbackShell;
+            taskObjectiveDisplay = bindings.TaskObjectiveDisplay;
         }
 
         public void SetVisible(bool visible)
