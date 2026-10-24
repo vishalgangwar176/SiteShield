@@ -123,6 +123,7 @@ namespace SafetyTraining.Runtime
             if (activating)
                 return;
             activationSource = source;
+            SafetyAudioManager.Instance?.PlayPortal();
             StartCoroutine(PlayActivation());
         }
 

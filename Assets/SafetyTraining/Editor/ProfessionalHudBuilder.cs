@@ -59,7 +59,10 @@ namespace SafetyTraining.Editor
             Text("Score Label", scoreShell.transform, "ASSESSMENT SCORE", font, 16, Muted,
                 new Vector2(-18f, -14f), new Vector2(205f, 22f), TextAnchor.UpperRight);
             var score = Text("Score Value", scoreShell.transform, "0000", font, 30, Primary,
-                new Vector2(-18f, -36f), new Vector2(205f, 38f), TextAnchor.UpperRight);
+                new Vector2(-18f, -36f), new Vector2(120f, 38f), TextAnchor.UpperRight);
+            var scoreDelta = Text("Score Delta", scoreShell.transform, "+100", font, 20, Accent,
+                new Vector2(-140f, -36f), new Vector2(90f, 38f), TextAnchor.UpperRight);
+            scoreDelta.fontStyle = FontStyle.Bold;
 
             var feedbackShell = Shell("Feedback Shell", root.transform, panelSprite,
                 new Vector2(0f, 16f), new Vector2(820f, 118f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f));
@@ -81,10 +84,32 @@ namespace SafetyTraining.Editor
             var progressLabel = Text("Progress Label", feedbackShell.transform, "SESSION 00:00 / 20:00", font, 14, Muted,
                 new Vector2(-24f, 94f), new Vector2(240f, 20f), TextAnchor.LowerRight);
             var hints = Text("Control Hints", feedbackShell.transform,
-                "<color=#F2F6FA><b>[Click]</b> Inspect</color>    <size=11><color=#9FB3C8>[C] Coach    [Esc] Close</color></size>",
+                "<color=#F2F6FA><b>[LMB]</b> Inspect</color>    <size=11><color=#9FB3C8>[C] Coach    [H] Toggle Brief    [Esc] Menu</color></size>",
                 bodyFont, 14, Muted,
                 new Vector2(24f, 8f), new Vector2(520f, 20f), TextAnchor.LowerLeft);
             hints.supportRichText = true;
+
+            // Reticle Dot & Contextual Interaction Prompt
+            var reticle = Image("Interaction Reticle", root.transform, null, new Color(1f, 1f, 1f, 0.4f),
+                Vector2.zero, new Vector2(4f, 4f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f));
+
+            var promptShell = Shell("Interaction Prompt Pill", root.transform, panelSprite,
+                new Vector2(0f, -65f), new Vector2(380f, 48f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f));
+            var promptGroup = promptShell.AddComponent<CanvasGroup>();
+            promptGroup.alpha = 0f;
+            promptGroup.blocksRaycasts = false;
+            promptGroup.interactable = false;
+
+            var promptIcon = Image("Prompt Icon", promptShell.transform, iconSprite, Accent,
+                new Vector2(16f, -13f), new Vector2(22f, 22f), new Vector2(0f, 1f), new Vector2(0f, 1f));
+            var promptAction = Text("Prompt Action", promptShell.transform, "[LMB] INSPECT", font, 13, Accent,
+                new Vector2(46f, -8f), new Vector2(310f, 16f), TextAnchor.UpperLeft);
+            promptAction.fontStyle = FontStyle.Bold;
+            var promptTitle = Text("Prompt Title", promptShell.transform, "Target Condition", bodyFont, 14, Primary,
+                new Vector2(46f, -24f), new Vector2(310f, 18f), TextAnchor.UpperLeft);
+
+            var promptHud = root.AddComponent<InteractionPromptHud>();
+            promptHud.Bind(promptGroup, promptAction, promptTitle, promptIcon, reticle);
 
             root.AddComponent<TrainingHud>().Configure(new TrainingHud.Bindings
             {
@@ -95,7 +120,9 @@ namespace SafetyTraining.Editor
                 FeedbackDisplay = feedback,
                 ProgressDisplay = progressLabel,
                 ProgressFill = progress.rectTransform,
-                StateIcon = icon
+                StateIcon = icon,
+                ScoreDeltaDisplay = scoreDelta,
+                FeedbackShell = feedbackShell.GetComponent<RectTransform>()
             });
         }
 

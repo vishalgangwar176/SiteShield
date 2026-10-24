@@ -121,6 +121,19 @@ namespace SafetyTraining.Runtime
             HudFeedback = FormatHudFeedback(target, result);
             eventLogger.Record(target, result, OverallScore);
             InspectionCompleted?.Invoke(target.SiteId, result);
+
+            if (result.Outcome == InspectionOutcome.CorrectHazard)
+            {
+                if (result.IsComplete)
+                    SafetyAudioManager.Instance?.PlayObjectiveComplete();
+                else
+                    SafetyAudioManager.Instance?.PlayScoreGain();
+            }
+            else if (result.Outcome == InspectionOutcome.SafeObjectSelected)
+            {
+                SafetyAudioManager.Instance?.PlayPenalty();
+            }
+
             return result;
         }
 
@@ -128,6 +141,7 @@ namespace SafetyTraining.Runtime
         {
             handsOnBonus += Mathf.Max(0, points);
             OverallScore = CalculateOverallScore();
+            SafetyAudioManager.Instance?.PlayPlacementSnap();
         }
 
         public void RecordPlacementAttempt(TrainingSiteId siteId, int stepIndex, string actionName,

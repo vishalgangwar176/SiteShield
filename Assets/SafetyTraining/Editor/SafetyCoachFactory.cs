@@ -40,6 +40,7 @@ namespace SafetyTraining.Editor
                     mat.DisableKeyword("_EMISSION");
                 }
             }
+            coach.AddComponent<InteractiveHoverFeedback>();
             coach.AddComponent<NpcRelaxedPose>();
             var agent = coach.AddComponent<NpcConversationAgent>();
             agent.Configure(siteId, role, facts);

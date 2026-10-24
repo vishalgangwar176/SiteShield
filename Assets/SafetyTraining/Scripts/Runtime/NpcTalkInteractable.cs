@@ -102,6 +102,7 @@ namespace SafetyTraining.Runtime
             if (agent == null || conversationPrompts == null || conversationPrompts.Length == 0)
                 return;
 
+            SafetyAudioManager.Instance?.PlayCoachChirp();
             speechBubble?.Show("Ask me about the condition, risk, or safest control.", 0, 1);
             if (siteTitle != null)
                 siteTitle.gameObject.SetActive(false);

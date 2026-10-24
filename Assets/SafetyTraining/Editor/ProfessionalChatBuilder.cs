@@ -43,7 +43,7 @@ namespace SafetyTraining.Editor
             scaler.referenceResolution = new Vector2(1200f, 700f);
             scaler.matchWidthOrHeight = 0.5f;
             canvasObject.AddComponent<GraphicRaycaster>();
-            // TrackedDeviceGraphicRaycaster not needed for ScreenSpaceOverlay
+            canvasObject.AddComponent<TrackedDeviceGraphicRaycaster>();
             canvasObject.GetComponent<RectTransform>().sizeDelta = new Vector2(520f, 300f);
 
             var panel = Image("NPC Chat Panel", canvasObject.transform, sprite, material, Panel,

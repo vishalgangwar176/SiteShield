@@ -73,8 +73,10 @@ namespace SafetyTraining.Runtime
             if (!Input.GetMouseButton(1))
                 return;
 
-            var yaw = Input.GetAxis("Mouse X") * lookSpeed * Time.deltaTime;
-            pitch = Mathf.Clamp(pitch - Input.GetAxis("Mouse Y") * lookSpeed * Time.deltaTime, -80f, 80f);
+            var sensitivity = SiteShieldTitleScreen.Instance != null ? SiteShieldTitleScreen.Instance.LookSensitivity : 1f;
+            var currentLookSpeed = lookSpeed * sensitivity;
+            var yaw = Input.GetAxis("Mouse X") * currentLookSpeed * Time.deltaTime;
+            pitch = Mathf.Clamp(pitch - Input.GetAxis("Mouse Y") * currentLookSpeed * Time.deltaTime, -80f, 80f);
             if (locomotionRoot != null)
                 locomotionRoot.Rotate(0f, yaw, 0f, Space.World);
             transform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
@@ -178,12 +180,14 @@ namespace SafetyTraining.Runtime
 
         static bool ShouldBlockWorldPointer(bool chatVisible, bool pointerOverUi)
         {
-            return chatVisible || pointerOverUi;
+            var menuOpen = SiteShieldTitleScreen.Instance != null && SiteShieldTitleScreen.Instance.IsOpen;
+            return chatVisible || pointerOverUi || menuOpen;
         }
 
         static bool ShouldBlockLocomotion(bool chatVisible, bool textEntryFocused)
         {
-            return chatVisible || textEntryFocused;
+            var menuOpen = SiteShieldTitleScreen.Instance != null && SiteShieldTitleScreen.Instance.IsOpen;
+            return chatVisible || textEntryFocused || menuOpen;
         }
 
         void HandleActiveDesktopDrag(Ray pointerRay, bool buttonHeld)

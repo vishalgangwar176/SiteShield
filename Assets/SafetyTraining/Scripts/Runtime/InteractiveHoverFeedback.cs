@@ -43,17 +43,37 @@ namespace SafetyTraining.Runtime
             ApplyEmission(hovered ? highlightColor * 0.75f : Color.black);
         }
 
+        static MaterialPropertyBlock propBlock;
+        static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
+
         void ApplyEmission(Color color)
         {
             if (renderers == null)
                 return;
+            if (propBlock == null)
+                propBlock = new MaterialPropertyBlock();
+
             foreach (var item in renderers)
             {
-                var material = item.material;
-                if (!material.HasProperty("_EmissionColor"))
+                if (item == null)
                     continue;
-                material.EnableKeyword("_EMISSION");
-                material.SetColor("_EmissionColor", color);
+
+                var mats = item.sharedMaterials;
+                if (mats != null)
+                {
+                    for (var i = 0; i < mats.Length; i++)
+                    {
+                        var mat = mats[i];
+                        if (mat != null && mat.HasProperty(EmissionColorId) && !mat.IsKeywordEnabled("_EMISSION"))
+                        {
+                            mat.EnableKeyword("_EMISSION");
+                        }
+                    }
+                }
+
+                item.GetPropertyBlock(propBlock);
+                propBlock.SetColor(EmissionColorId, color);
+                item.SetPropertyBlock(propBlock);
             }
         }
     }

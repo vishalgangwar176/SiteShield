@@ -66,9 +66,13 @@ namespace SafetyTraining.Editor
                 new Color(0.118f, 0.227f, 0.322f)); // #1E3A52
             border.transform.SetSiblingIndex(panel.transform.GetSiblingIndex());
 
-            // Left-aligned blue arrow icon + 'Return to campus' in Inter/clean font (no SELECT TO RETURN line)
             var arrowColor = new Color(0.184f, 0.490f, 1.0f); // #2F7DFF
             var textColor = new Color(0.949f, 0.965f, 0.980f); // #F2F6FA
+
+            // Blue status rail / trim accent
+            Visual(PrimitiveType.Cube, "Return Status Accent", parent,
+                new Vector3(0f, centerY + 0.31f * scale, -0.45f), new Vector3(1.58f * scale, 0.04f * scale, 0.03f),
+                arrowColor);
 
             var signRoot = new GameObject("Return Sign Content");
             signRoot.transform.SetParent(parent, false);
@@ -102,6 +106,16 @@ namespace SafetyTraining.Editor
                 arrowMesh.font = font;
                 arrowObj.GetComponent<MeshRenderer>().sharedMaterial = font.material;
             }
+
+            var beacon = new GameObject("Portal Interaction Beacon");
+            beacon.transform.SetParent(parent, false);
+            beacon.transform.localPosition = new Vector3(0f, centerY + 0.52f * scale, -0.35f);
+            var light = beacon.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.color = arrowColor;
+            light.intensity = 0.85f;
+            light.range = 1.8f;
+            light.shadows = LightShadows.None;
         }
 
         static void BuildDisplay(Transform parent, string number, string title, string subtitle, Color accent,

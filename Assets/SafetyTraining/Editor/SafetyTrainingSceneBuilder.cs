@@ -48,6 +48,8 @@ namespace SafetyTraining.Editor
             var lobby = CreateTrainingHubLobby();
             var coordinator = new GameObject("Training Coordinator");
             coordinator.AddComponent<TrainingCoordinator>();
+            coordinator.AddComponent<AudioSource>();
+            coordinator.AddComponent<SafetyAudioManager>();
             coordinator.AddComponent<SiteExperienceDirector>();
             var isolation = coordinator.AddComponent<SiteIsolationController>();
             CreateHud();
@@ -462,6 +464,7 @@ namespace SafetyTraining.Editor
                 : Object.FindFirstObjectByType<Camera>();
             ProfessionalHudBuilder.Create(viewer);
             ProfessionalChatBuilder.Create(viewer);
+            TitleScreenBuilder.Create();
         }
 
         static LlmEndpointConfig LoadOrCreateEndpointConfig()
