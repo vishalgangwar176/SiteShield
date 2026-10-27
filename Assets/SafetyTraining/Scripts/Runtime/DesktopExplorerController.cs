@@ -9,23 +9,47 @@ namespace SafetyTraining.Runtime
 {
     public sealed class DesktopExplorerController : MonoBehaviour
     {
+        [Header("Movement")]
         [SerializeField, Min(0.1f)] float moveSpeed = 5f;
-        [SerializeField, Min(1f)] float lookSpeed = 100f;
+
+        [Header("First-Person Mouse Look")]
+        [SerializeField, Range(0.2f, 5f)] float mouseSensitivity = 2.0f;
+        [SerializeField] bool invertY = false;
+        [SerializeField] float minPitch = -80f;
+        [SerializeField] float maxPitch = 80f;
 
         Transform locomotionRoot;
         CharacterController characterController;
         bool desktopMode;
+        bool isCursorLocked;
+        bool wasUiBlocking;
         bool startupStabilityReported;
         float pitch;
         float startupStabilityDeadline;
         float maximumRootDrift;
         float maximumCameraLocalDrift;
-        float maximumCameraAngularDrift;
         Vector3 stableRootPosition;
         InteractiveHoverFeedback hoveredTarget;
         HandsOnPlacementInteractable draggedPlacement;
 
         public bool DesktopMode => desktopMode;
+        public bool IsCursorLocked => isCursorLocked;
+
+        public float MouseSensitivity
+        {
+            get => mouseSensitivity * PlayerPrefs.GetFloat("SS_LookSensitivity", 1.0f);
+            set
+            {
+                mouseSensitivity = Mathf.Clamp(value, 0.2f, 5.0f);
+                PlayerPrefs.SetFloat("SS_LookSensitivity", 1.0f);
+            }
+        }
+
+        public bool InvertY
+        {
+            get => invertY;
+            set => invertY = value;
+        }
 
         void Start()
         {
@@ -39,11 +63,38 @@ namespace SafetyTraining.Runtime
             }
 
             DisableXrPoseAndLocomotionWriters();
-            transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
-            pitch = 0f;
+
+            // Initialize camera orientation and pitch
+            var currentAngles = transform.localEulerAngles;
+            pitch = currentAngles.x;
+            if (pitch > 180f) pitch -= 360f;
+            pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
+            transform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+
             stableRootPosition = locomotionRoot.position;
             startupStabilityDeadline = Time.unscaledTime + 2f;
-            Debug.Log("Desktop preview mode: XR pose and locomotion writers disabled; camera is controlled through the rig root.");
+
+            // Lock and hide cursor for first-person gameplay
+            var menuOpen = SiteShieldTitleScreen.Instance != null && SiteShieldTitleScreen.Instance.IsOpen;
+            wasUiBlocking = menuOpen;
+            SetCursorLocked(!menuOpen);
+
+            Debug.Log("Desktop preview mode: First-person camera mouse look (unlocked unrestricted yaw, clamped pitch) and WASD locomotion active.");
+        }
+
+        public void SetCursorLocked(bool locked)
+        {
+            isCursorLocked = locked;
+            if (locked)
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
+            else
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
         }
 
         void Update()
@@ -51,35 +102,111 @@ namespace SafetyTraining.Runtime
             if (!desktopMode)
                 return;
 
+            HandleCursorState();
+
             var chatVisible = NpcChatPanel.Instance != null && NpcChatPanel.Instance.IsVisible;
             var textEntryFocused = IsTextEntryFocused();
             var locomotionBlocked = ShouldBlockLocomotion(chatVisible, textEntryFocused);
+
+            HandleLocomotion(locomotionBlocked);
+            HandleLook(chatVisible, textEntryFocused);
+            HandlePointer(chatVisible);
+        }
+
+        void HandleCursorState()
+        {
+            var chatVisible = NpcChatPanel.Instance != null && NpcChatPanel.Instance.IsVisible;
+            var menuOpen = SiteShieldTitleScreen.Instance != null && SiteShieldTitleScreen.Instance.IsOpen;
+            bool uiBlocking = chatVisible || menuOpen;
+
+            // Sync cursor lock when UI visibility changes
+            if (uiBlocking != wasUiBlocking)
+            {
+                wasUiBlocking = uiBlocking;
+                SetCursorLocked(!uiBlocking);
+                return;
+            }
+
+            // Escape key toggles cursor lock when chat/menu are closed
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                if (!uiBlocking)
+                {
+                    SetCursorLocked(!isCursorLocked);
+                }
+            }
+            // Left click in viewport re-locks cursor if not clicking UI
+            else if (!isCursorLocked && !uiBlocking)
+            {
+                if (Input.GetMouseButtonDown(0) && !IsPointerOverUi())
+                {
+                    SetCursorLocked(true);
+                }
+            }
+        }
+
+        void HandleLook(bool chatVisible, bool textEntryFocused)
+        {
+            var menuOpen = SiteShieldTitleScreen.Instance != null && SiteShieldTitleScreen.Instance.IsOpen;
+
+            // Lock camera look when in menus, chat, text entry, or cursor is unlocked
+            if (!isCursorLocked || chatVisible || textEntryFocused || menuOpen)
+                return;
+
+            Vector2 mouseDelta = GetMouseDelta();
+            if (mouseDelta.sqrMagnitude < 0.000001f)
+                return;
+
+            float sensMultiplier = PlayerPrefs.GetFloat("SS_LookSensitivity", 1.0f);
+            float effectiveSensitivity = mouseSensitivity * sensMultiplier;
+
+            float deltaYaw = mouseDelta.x * effectiveSensitivity;
+            float deltaPitch = mouseDelta.y * effectiveSensitivity * (invertY ? -1f : 1f);
+
+            // Horizontal rotation: rotates the player body (locomotionRoot) around world Y
+            if (locomotionRoot != null)
+            {
+                locomotionRoot.Rotate(0f, deltaYaw, 0f, Space.World);
+            }
+
+            // Vertical rotation: rotates the camera pivot around local X, clamped
+            pitch = Mathf.Clamp(pitch - deltaPitch, minPitch, maxPitch);
+            transform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+        }
+
+        Vector2 GetMouseDelta()
+        {
+            try
+            {
+                return new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y"));
+            }
+            catch
+            {
+                return Vector2.zero;
+            }
+        }
+
+        void HandleLocomotion(bool locomotionBlocked)
+        {
             var movement = locomotionBlocked
                 ? Vector3.zero
                 : new Vector3(Input.GetAxisRaw("Horizontal"), 0f, Input.GetAxisRaw("Vertical"));
+
             MonitorStartupStability(movement);
-            HandlePointer();
-            if (locomotionBlocked)
+
+            if (locomotionBlocked || movement.sqrMagnitude < 0.0001f)
                 return;
+
+            // Planar movement relative to camera forward/right
             var planarForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
             var planarRight = Vector3.ProjectOnPlane(transform.right, Vector3.up).normalized;
             var worldMovement = (planarRight * movement.x + planarForward * movement.z).normalized;
             var displacement = worldMovement * (moveSpeed * Time.deltaTime);
+
             if (characterController != null && characterController.enabled)
                 characterController.Move(displacement);
             else if (locomotionRoot != null)
                 locomotionRoot.position += displacement;
-
-            if (!Input.GetMouseButton(1))
-                return;
-
-            var sensitivity = SiteShieldTitleScreen.Instance != null ? SiteShieldTitleScreen.Instance.LookSensitivity : 1f;
-            var currentLookSpeed = lookSpeed * sensitivity;
-            var yaw = Input.GetAxis("Mouse X") * currentLookSpeed * Time.deltaTime;
-            pitch = Mathf.Clamp(pitch - Input.GetAxis("Mouse Y") * currentLookSpeed * Time.deltaTime, -80f, 80f);
-            if (locomotionRoot != null)
-                locomotionRoot.Rotate(0f, yaw, 0f, Space.World);
-            transform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
         }
 
         bool IsTextEntryFocused()
@@ -114,18 +241,23 @@ namespace SafetyTraining.Runtime
             }
         }
 
-        void HandlePointer()
+        void HandlePointer(bool chatVisible)
         {
             var cam = GetComponent<Camera>();
             if (cam == null) return;
-            var ray = cam.ScreenPointToRay(Input.mousePosition);
+
+            // When cursor is locked, cast ray directly from center reticle (0.5, 0.5)
+            // When cursor is unlocked, cast ray from mouse screen position
+            Ray ray = isCursorLocked
+                ? cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f))
+                : cam.ScreenPointToRay(Input.mousePosition);
+
             if (draggedPlacement != null)
             {
                 HandleActiveDesktopDrag(ray, Input.GetMouseButton(0));
                 return;
             }
 
-            var chatVisible = NpcChatPanel.Instance != null && NpcChatPanel.Instance.IsVisible;
             var pointerOverUi = IsPointerOverUi();
             if (!DesktopPointerInputGate.CanUseWorldPointer || ShouldBlockWorldPointer(chatVisible, pointerOverUi))
             {
@@ -227,11 +359,11 @@ namespace SafetyTraining.Runtime
                 inspection.Inspect();
                 return;
             }
-
         }
 
         void OnDisable()
         {
+            SetCursorLocked(false);
             if (hoveredTarget != null)
             {
                 hoveredTarget.SetHovered(false);
@@ -246,27 +378,30 @@ namespace SafetyTraining.Runtime
 
         void OnApplicationFocus(bool hasFocus)
         {
-            if (hasFocus || draggedPlacement == null)
-                return;
-
-            draggedPlacement.CancelDesktopDrag();
-            draggedPlacement = null;
+            if (!hasFocus)
+            {
+                SetCursorLocked(false);
+                if (draggedPlacement != null)
+                {
+                    draggedPlacement.CancelDesktopDrag();
+                    draggedPlacement = null;
+                }
+            }
         }
 
         void MonitorStartupStability(Vector3 movement)
         {
-            if (startupStabilityReported || movement.sqrMagnitude > 0f || Input.GetMouseButton(1))
+            if (startupStabilityReported || movement.sqrMagnitude > 0f)
                 return;
 
             if (locomotionRoot == null) return;
             maximumRootDrift = Mathf.Max(maximumRootDrift, Vector3.Distance(stableRootPosition, locomotionRoot.position));
             maximumCameraLocalDrift = Mathf.Max(maximumCameraLocalDrift, transform.localPosition.magnitude);
-            maximumCameraAngularDrift = Mathf.Max(maximumCameraAngularDrift, Quaternion.Angle(Quaternion.identity, transform.localRotation));
             if (Time.unscaledTime < startupStabilityDeadline)
                 return;
 
             startupStabilityReported = true;
-            Debug.Log($"Desktop startup stability PASS: root drift {maximumRootDrift:F4} m, camera local drift {maximumCameraLocalDrift:F4} m, camera angular drift {maximumCameraAngularDrift:F3} deg over 2.0 s.");
+            Debug.Log($"Desktop startup stability PASS: root drift {maximumRootDrift:F4} m, camera local drift {maximumCameraLocalDrift:F4} m over 2.0 s.");
         }
 
         static bool HasRunningXrDisplay()
@@ -294,3 +429,4 @@ namespace SafetyTraining.Runtime
         }
     }
 }
+

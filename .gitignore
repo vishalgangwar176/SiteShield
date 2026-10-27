@@ -27,3 +27,6 @@ test-results*.xml
 sysinfo.txt
 *.bundle
 
+
+.pico-cli/
+.trae/
