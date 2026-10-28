@@ -1,0 +1,10 @@
+{
+  "name": "SafetyTraining.Runtime",
+  "rootNamespace": "SafetyTraining.Runtime",
+  "references": [
+    "SafetyTraining.Core",
+    "Unity.XR.Interaction.Toolkit",
+    "Unity.TextMeshPro"
+  ],
+  "autoReferenced": true
+}

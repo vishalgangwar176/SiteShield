@@ -1,0 +1,18 @@
+{
+  "name": "SafetyTraining.Editor",
+  "rootNamespace": "SafetyTraining.Editor",
+  "references": [
+    "SafetyTraining.Core",
+    "SafetyTraining.Runtime",
+    "Unity.XR.Interaction.Toolkit",
+    "Unity.XR.Management",
+    "Unity.XR.Management.Editor",
+    "Unity.XR.OpenXR",
+    "Unity.XR.OpenXR.Editor",
+    "Unity.TextMeshPro"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": true
+}

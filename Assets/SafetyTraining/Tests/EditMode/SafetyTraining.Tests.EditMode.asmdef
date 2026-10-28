@@ -1,0 +1,17 @@
+{
+  "name": "SafetyTraining.Tests.EditMode",
+  "rootNamespace": "SafetyTraining.Tests.EditMode",
+  "references": [
+    "SafetyTraining.Core",
+    "SafetyTraining.Runtime",
+    "Unity.XR.Interaction.Toolkit",
+    "Unity.TextMeshPro"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "autoReferenced": false
+}
